@@ -1,6 +1,6 @@
 #ifndef LAB0_QUEUE_H
 #define LAB0_QUEUE_H
-
+/*hi*/
 /*
  * This program implements a queue supporting both FIFO and LIFO
  * operations.
