@@ -4,7 +4,8 @@
 
 #include "harness.h"
 #include "queue.h"
-
+list_ele_t *merge(list_ele_t *l1, list_ele_t *l2);
+list_ele_t *merge_sort(list_ele_t *head);
 /*
  * Create empty queue.
  * Return NULL if could not allocate space.
@@ -59,9 +60,10 @@ bool q_insert_head(queue_t *q, char *s)
         free(new_node);
         return false;
     }
-    strncpy(new_node->value, s, strlen(s));
-    if (!q->tail) {
+    strncpy(new_node->value, s, strlen(s) + 1);
+    if (!q->head) {
         q->tail = new_node;
+        q->tail->next = NULL;
     }
     new_node->next = q->head;
     q->head = new_node;
@@ -88,15 +90,16 @@ bool q_insert_tail(queue_t *q, char *s)
         free(new_node);
         return false;
     }
-    strncpy(new_node->value, s, strlen(s));
-    new_node->next = NULL;
-    if (!q->tail) {
+
+    strncpy(new_node->value, s, strlen(s) + 1);
+    if (q->head == NULL) {
         q->head = new_node;
         q->tail = new_node;
     } else {
         q->tail->next = new_node;
         q->tail = new_node;
     }
+    q->tail->next = NULL;
     q->size++;
     return true;
 }
@@ -123,8 +126,7 @@ bool q_remove_head(queue_t *q, char *sp, size_t bufsize)
 
     if (ptr->value)
         free(ptr->value);
-    if (ptr == q->tail)
-        q->tail = NULL;
+
     free(ptr);
     q->size--;
     return true;
@@ -148,16 +150,21 @@ int q_size(queue_t *q)
  */
 void q_reverse(queue_t *q)
 {
+    if (!q || !q->head)
+        return;
+    if (!q->head->next)
+        return;
     list_ele_t *current, *prev, *next;
-
     prev = NULL;
     current = q->head;
+
     while (current != NULL) {
         next = current->next;
         current->next = prev;
         prev = current;
         current = next;
     }
+    q->tail = q->head;
     q->head = prev;
 }
 
@@ -166,8 +173,77 @@ void q_reverse(queue_t *q)
  * No effect if q is NULL or empty. In addition, if q has only one
  * element, do nothing.
  */
+
+list_ele_t *merge_sort(list_ele_t *head)
+{
+    /* merge sort */
+    if (!head || !head->next)
+        return head;
+    list_ele_t *slow = head;
+    list_ele_t *fast = head->next;
+    /* split list */
+    while (fast && fast->next) {
+        slow = slow->next;
+        fast = fast->next->next;
+    }
+    fast = slow->next;
+    slow->next = NULL;
+    /* sort each list */
+    list_ele_t *l1 = merge_sort(head);
+    list_ele_t *l2 = merge_sort(fast);
+    /* merge sorted l1 and sorted l2 */
+    return merge(l1, l2);
+}
+
+
+
+list_ele_t *merge(list_ele_t *l1, list_ele_t *l2)
+{
+    if (!l1)
+        return l2;
+    if (!l2)
+        return l1;
+
+    list_ele_t *head = NULL; /* pseudo head */
+    list_ele_t *tmp = NULL;
+    /* decide the first element and use it as pseudo head */
+    if (strcasecmp(l1->value, l2->value) < 0) {
+        head = l1;
+        l1 = l1->next;
+    } else {
+        head = l2;
+        l2 = l2->next;
+    }
+    /* merge remaining elements to pseudo head */
+    tmp = head;
+    while (l1 && l2) {
+        if (strcasecmp(l1->value, l2->value) < 0) {
+            tmp->next = l1;
+            l1 = l1->next;
+
+        } else {
+            tmp->next = l2;
+            l2 = l2->next;
+        }
+        tmp = tmp->next;
+    }
+    if (l1)
+        tmp->next = l1;
+    if (l2)
+        tmp->next = l2;
+    return head;
+}
+
+
+
 void q_sort(queue_t *q)
 {
-    /* TODO: You need to write the code for this function */
-    /* TODO: Remove the above comment when you are about to implement. */
+    if (!q || !q->head) /* ignore NULL and empty queue */
+        return;
+    if (!q->head->next)
+        return;
+    q->head = merge_sort(q->head);
+    while (q->tail->next) { /* update the tail pointer */
+        q->tail = q->tail->next;
+    }
 }
